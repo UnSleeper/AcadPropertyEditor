@@ -16,6 +16,8 @@ using System.Collections.ObjectModel;
 using System.Data.Linq;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using acColor = Autodesk.AutoCAD.Colors.Color;
+using Autodesk.AutoCAD.DatabaseServices;
 
 namespace AcadPropertyEditor
 {
@@ -24,28 +26,25 @@ namespace AcadPropertyEditor
     /// </summary>
     public partial class EditWindow : Window
     {
-        private LayersData LayersListData;
+        private readonly LayersViewMode LayersListData;
         public EditWindow()
         {
             InitializeComponent();
-            LayersListData = new LayersData();
+            LayersListData = new LayersViewMode();
             DataContext = LayersListData;
-            LayersListData.LayersList.Add(new DataLayer
-            {
-                Name = "Test Name 1"
-            });
-            LayersListData.LayersList.Add(new DataLayer
-            {
-                Name = "Test Name 2"
-            });
         }
 
-        public class LayersData
+        public class LayersViewMode
         {
-            public ObservableCollection<DataLayer> LayersList { get; set; } = new ObservableCollection<DataLayer>();
-        }
+            public ObservableCollection<LayerModel> LayersList { get; set; } = new ObservableCollection<LayerModel>();
 
-        public class DataLayer : INotifyPropertyChanged
+            public event PropertyChangedEventHandler PropertyChanged;
+            public void OnPropertyChanged([CallerMemberName] string propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        public class Model : INotifyPropertyChanged
         {
             private string name;
             public string Name
@@ -57,37 +56,89 @@ namespace AcadPropertyEditor
                     OnPropertyChanged();
                 }
             }
-            public ObservableCollection<DataPoint> Points { get; set; }
-            public ObservableCollection<DataLine> Lines { get; set; }
-            public ObservableCollection<DataCircle> Circles { get; set; }
-
             public event PropertyChangedEventHandler PropertyChanged;
             protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
-        public class DataPoint
+        public class LayerModel : Model, INotifyPropertyChanged
         {
-            public int x { get; set; }
-            public int y { get; set; }
-            public int z { get; set; }
+            private acColor color;
+            public acColor Color
+            {
+                get => color;
+                set
+                {
+                    color = value;
+                    OnPropertyChanged();
+                }
+            }
+
+            private bool visible;
+            public bool Visible
+            {
+                get => visible;
+                set
+                {
+                    visible = value;
+                    OnPropertyChanged();
+                }
+            }
+
+            public ObservableCollection<PointModel> Points { get; set; } = new ObservableCollection<PointModel>();
+            public ObservableCollection<LineModel> Lines { get; set; } = new ObservableCollection<LineModel>();
+            public ObservableCollection<CircleViewMode> Circles { get; set; } = new ObservableCollection<CircleViewMode>();
+
         }
-        public class DataLine
+        public class PointModel : Model, INotifyPropertyChanged
         {
-            public int x1 { get; set; }
-            public int y1 { get; set; }
-            public int z1 { get; set; }
-            public int x2 { get; set; }
-            public int y2 { get; set; }
-            public int z2 { get; set; }
+            private ObjectId id;
+
+            public PointModel()
+            {
+                Name = "Точка";
+            }
+
+            public ObjectId Id
+            {
+                get => id;
+                set
+                {
+                    id = value;
+                    OnPropertyChanged();
+                }
+            }
         }
-        public class DataCircle
+
+        public class LineModel : Model, INotifyPropertyChanged
         {
-            public int x { get; set; }
-            public int y { get; set; }
-            public int z { get; set; }
-            public int r { get; set; }
+            private readonly string name = "Отрезок";
+            private ObjectId id;
+            public ObjectId Id
+            {
+                get => id;
+                set
+                {
+                    id = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public class CircleViewMode : Model, INotifyPropertyChanged
+        {
+            private string name = "Окружность";
+            private ObjectId id;
+            public ObjectId Id
+            {
+                get => id;
+                set
+                {
+                    id = value;
+                    OnPropertyChanged();
+                }
+            }
         }
     }
 }

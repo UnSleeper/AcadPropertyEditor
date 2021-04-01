@@ -11,9 +11,33 @@
             <DataTemplate>
                 <StackPanel>
                     <TextBlock Text="{Binding Name}"/>
-                    <ListBox ItemsSource="{Binding Points}"/>
-                    <ListBox ItemsSource="{Binding Lines}"/>
-                    <ListBox ItemsSource="{Binding Circles}"/>
+                    <ListBox ItemsSource="{Binding Points}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+    </ListBox>
+                    <ListBox ItemsSource="{Binding Lines}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <ListBox ItemsSource="{Binding Circles}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </StackPanel>
             </DataTemplate>
         </ListBox.ItemTemplate>
