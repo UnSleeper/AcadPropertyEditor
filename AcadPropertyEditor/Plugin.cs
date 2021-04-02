@@ -21,13 +21,12 @@ namespace AcadPropertyEditor
             editor.WriteMessage("Запускаю окно изменений.." + Environment.NewLine);
             EditWindow mainView = new EditWindow();
             Application.ShowModelessWindow(mainView);
+            //if (Application.ShowModalWindow(mainView) != true) return; //Option to make the window modal to prevent changes
             mainView.DataContext = FindLayers();
-            //if (Application.ShowModalWindow(mainView) != true) return;
-            //Application.ShowAlertDialog("The layers in this drawing are: " + sLayerNames);
         }
-        public LayersViewMode FindLayers()
+        public LayersViewModel FindLayers()
         {
-            LayersViewMode layersListData = new LayersViewMode();
+            LayersViewModel layersListData = new LayersViewModel();
             // Get the current document and database
             Document acDoc = acApp.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
@@ -119,7 +118,7 @@ namespace AcadPropertyEditor
             }
         }
 
-        /*public static Point2d[] GetPoints(this Polyline polyline)
+        /*public static Point2d[] GetPoints(this Polyline polyline) //Workpiece for changing lines
         {
             var editor = acApp.DocumentManager.MdiActiveDocument.Editor;
             if (polyline == null)

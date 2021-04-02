@@ -6,40 +6,54 @@
              xmlns:local="clr-namespace:AcadPropertyEditor"
              mc:Ignorable="d" 
              d:DesignHeight="250" d:DesignWidth="400">
-    <ListBox ItemsSource="{Binding LayersList}">
-        <ListBox.ItemTemplate>
-            <DataTemplate>
-                <StackPanel>
-                    <TextBlock Text="{Binding Name}"/>
-                    <ListBox ItemsSource="{Binding Points}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel>
-                                <TextBlock Text="{Binding Name}"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-    </ListBox>
-                    <ListBox ItemsSource="{Binding Lines}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" DataContext="{Binding SelectedModel}" Grid.ColumnSpan="2">
+            <TextBlock Text="Выбранный элемент" Margin="0,0,-233,0"  />
+            <TextBlock Text="Элемент" />
+            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+        <ListBox ItemsSource="{Binding LayersList}"
+        SelectedItem="{Binding SelectedModel}" Grid.ColumnSpan="2" Margin="0,170,0,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ListBox ItemsSource="{Binding Points, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
-                                    <TextBlock Text="{Binding Name}"/>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
-                    </ListBox>
-                    <ListBox ItemsSource="{Binding Circles}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Name}"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
-            </DataTemplate>
-        </ListBox.ItemTemplate>
-    </ListBox>
+                        </ListBox>
+                        <ListBox ItemsSource="{Binding Lines, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox ItemsSource="{Binding Circles, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
 </Window>

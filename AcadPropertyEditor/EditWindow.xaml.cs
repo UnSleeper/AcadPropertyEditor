@@ -26,16 +26,26 @@ namespace AcadPropertyEditor
     /// </summary>
     public partial class EditWindow : Window
     {
-        private readonly LayersViewMode LayersListData;
+        private readonly LayersViewModel LayersListData;
         public EditWindow()
         {
             InitializeComponent();
-            LayersListData = new LayersViewMode();
+            LayersListData = new LayersViewModel();
             DataContext = LayersListData;
         }
 
-        public class LayersViewMode
+        public class LayersViewModel
         {
+            private Model _selectedModel;
+            public Model SelectedModel
+            {
+                get { return _selectedModel; }
+                set
+                {
+                    _selectedModel = value;
+                    OnPropertyChanged();
+                }
+            }
             public ObservableCollection<LayerModel> LayersList { get; set; } = new ObservableCollection<LayerModel>();
 
             public event PropertyChangedEventHandler PropertyChanged;
@@ -113,8 +123,12 @@ namespace AcadPropertyEditor
 
         public class LineModel : Model, INotifyPropertyChanged
         {
-            private readonly string name = "Отрезок";
             private ObjectId id;
+
+            public LineModel()
+            {
+                Name = "Отрезок";
+            }
             public ObjectId Id
             {
                 get => id;
@@ -128,8 +142,11 @@ namespace AcadPropertyEditor
 
         public class CircleViewMode : Model, INotifyPropertyChanged
         {
-            private string name = "Окружность";
             private ObjectId id;
+            public CircleViewMode()
+            {
+                Name = "Окружность";
+            }
             public ObjectId Id
             {
                 get => id;
