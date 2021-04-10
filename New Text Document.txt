@@ -1,0 +1,40 @@
+<ListBox ItemsSource="{Binding LayersList}"
+        SelectedItem="{Binding SelectedModel}" Grid.ColumnSpan="2" Margin="0,170,0,0">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ListBox ItemsSource="{Binding Points, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox ItemsSource="{Binding Lines, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <ListBox ItemsSource="{Binding Circles, UpdateSourceTrigger=PropertyChanged}"
+                                 SelectedItem="{Binding SelectedModel}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>

@@ -18,10 +18,9 @@ namespace AcadPropertyEditor
         public void DisplayLayerNames()
         {
             var editor = acApp.DocumentManager.MdiActiveDocument.Editor;
-            editor.WriteMessage("Запускаю окно изменений.." + Environment.NewLine);
+            editor.WriteMessage("Launching the change window.." + Environment.NewLine);
             EditWindow mainView = new EditWindow();
             Application.ShowModelessWindow(mainView);
-            //if (Application.ShowModalWindow(mainView) != true) return; //Option to make the window modal to prevent changes
             mainView.DataContext = FindLayers();
         }
         public LayersViewModel FindLayers()
@@ -48,7 +47,7 @@ namespace AcadPropertyEditor
                         {
                             Name = acLyrTblRec.Name,
                             Color = acLyrTblRec.Color,
-                            Visible = acLyrTblRec.IsOff
+                            Visible = !acLyrTblRec.IsOff
                         };
                         FindEntitiesForLayer(dataLayer);
 
@@ -79,7 +78,7 @@ namespace AcadPropertyEditor
                             {
                                 Id = entity.Id
                             };
-                            dataLayer.Points.Add(point);
+                            dataLayer.Models.Add(point);
                         }
                         if (entity.GetType().Name == "Line")
                         {
@@ -87,7 +86,7 @@ namespace AcadPropertyEditor
                             {
                                 Id = entity.Id
                             };
-                            dataLayer.Lines.Add(line);
+                            dataLayer.Models.Add(line);
                         }
                         if (entity.GetType().Name == "Circle")
                         {
@@ -95,7 +94,7 @@ namespace AcadPropertyEditor
                             {
                                 Id = entity.Id
                             };
-                            dataLayer.Circles.Add(circle);
+                            dataLayer.Models.Add(circle);
                         }
                     }
                 }
@@ -105,16 +104,26 @@ namespace AcadPropertyEditor
 
         public static void RenameLayerState(string sLyrStName, string sLyrStNewName)
         {
-            // Get the current document
-            Document acDoc = Application.DocumentManager.MdiActiveDocument;
-
-            LayerStateManager acLyrStMan;
-            acLyrStMan = acDoc.Database.LayerStateManager;
-
-            if (acLyrStMan.HasLayerState(sLyrStName) == true &&
-                acLyrStMan.HasLayerState(sLyrStNewName) == false)
+            LayersViewModel layersListData = new LayersViewModel();
+            // Get the current document and database
+            Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+            Database acCurDb = acDoc.Database;
+            using (DocumentLock acLckDoc = acDoc.LockDocument())
             {
-                acLyrStMan.RenameLayerState(sLyrStName, sLyrStNewName);
+                // Start a transaction
+                using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                {
+                    // Open the Layer table for read
+                    LayerTable acLyrTbl;
+                    acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
+                        OpenMode.ForRead) as LayerTable;
+                    if (acLyrTbl.Has(sLyrStName) == true)
+                    {
+                        LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
+                        acLyrTblRec.Name = sLyrStNewName;
+                        acTrans.Commit();
+                    }
+                }
             }
         }
 

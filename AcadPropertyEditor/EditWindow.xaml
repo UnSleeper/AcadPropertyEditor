@@ -4,56 +4,38 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:AcadPropertyEditor"
+             DataContext="EditWindow"
              mc:Ignorable="d" 
              d:DesignHeight="250" d:DesignWidth="400">
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0" DataContext="{Binding SelectedModel}" Grid.ColumnSpan="2">
-            <TextBlock Text="Выбранный элемент" Margin="0,0,-233,0"  />
-            <TextBlock Text="Элемент" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Column="0" DataContext="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2">
+            <TextBlock Text="Выбранный элемент:" Margin="0,0,0,0" Height="20"  />
             <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Видимость:" Margin="0,0,0,0" Height="20"  />
+            <CheckBox IsChecked="{Binding Visible, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="Цвет:" Margin="0,0,0,0" Height="20"  />
+            <TextBox Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}"/>
         </StackPanel>
-        <ListBox ItemsSource="{Binding LayersList}"
-        SelectedItem="{Binding SelectedModel}" Grid.ColumnSpan="2" Margin="0,170,0,0">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel>
-                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-                        <ListBox ItemsSource="{Binding Points, UpdateSourceTrigger=PropertyChanged}"
-                                 SelectedItem="{Binding SelectedModel}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel>
-                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        </ListBox>
-                        <ListBox ItemsSource="{Binding Lines, UpdateSourceTrigger=PropertyChanged}"
-                                 SelectedItem="{Binding SelectedModel}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <ListBox ItemsSource="{Binding Circles, UpdateSourceTrigger=PropertyChanged}"
-                                 SelectedItem="{Binding SelectedModel}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+
+        <TreeView Name="trvElem"
+          Grid.Row="1" 
+          Grid.Column="1" 
+          ItemsSource="{Binding LayersList, UpdateSourceTrigger=PropertyChanged}"
+          SelectedItemChanged="TreeViewOnSelectedItemChanged">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate  ItemsSource="{Binding Models}" >
+                        <TextBlock Text="{Binding Path=Name}" Margin="5,0,5,0" />
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
     </Grid>
 </Window>
