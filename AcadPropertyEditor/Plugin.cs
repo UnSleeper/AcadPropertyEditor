@@ -2,13 +2,9 @@
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-using acColor = Autodesk.AutoCAD.Colors.Color;
 using acApp = Autodesk.AutoCAD.ApplicationServices.Application;
-using WinForm = System.Windows;
 using static AcadPropertyEditor.EditWindow;
-using System.Windows.Media;
-using System.Collections.Generic;
+using System.Windows.Media.Media3D;
 
 namespace AcadPropertyEditor
 {
@@ -21,11 +17,11 @@ namespace AcadPropertyEditor
             editor.WriteMessage("Launching the change window.." + Environment.NewLine);
             EditWindow mainView = new EditWindow();
             Application.ShowModelessWindow(mainView);
-            mainView.DataContext = FindLayers();
+
+            FindLayers(mainView.DataContext as LayersViewModel);
         }
-        public LayersViewModel FindLayers()
+        public void FindLayers(LayersViewModel layersListData)
         {
-            LayersViewModel layersListData = new LayersViewModel();
             // Get the current document and database
             Document acDoc = acApp.DocumentManager.MdiActiveDocument;
             Database acCurDb = acDoc.Database;
@@ -47,17 +43,16 @@ namespace AcadPropertyEditor
                         {
                             Name = acLyrTblRec.Name,
                             Color = acLyrTblRec.Color,
-                            Visible = !acLyrTblRec.IsOff
+                            Visible = !acLyrTblRec.IsOff,
+                            Id = acLyrTblRec.Id
                         };
                         FindEntitiesForLayer(dataLayer);
-
                         layersListData.LayersList.Add(dataLayer);
                     }
                     // Dispose of the transaction
                     acTrans.Commit();
                 }
             }
-            return layersListData;
         }
 
         public void FindEntitiesForLayer(LayerModel dataLayer)
@@ -74,76 +69,40 @@ namespace AcadPropertyEditor
                     {
                         if (entity.GetType().Name == "DBPoint") 
                         {
+                            DBPoint acDBPoint = entity as DBPoint;
                             PointModel point = new PointModel()
                             {
-                                Id = entity.Id
+                                Id = entity.Id,
+                                Point = new Point3D(acDBPoint.Position.X, acDBPoint.Position.Y, acDBPoint.Position.Z)
                             };
                             dataLayer.Models.Add(point);
                         }
                         if (entity.GetType().Name == "Line")
                         {
+                            Line acLine = entity as Line;
                             LineModel line = new LineModel()
                             {
-                                Id = entity.Id
-                            };
+                                Id = entity.Id,
+                                StartPoint = new Point3D(acLine.StartPoint.X, acLine.StartPoint.Y, acLine.StartPoint.Z),
+                                EndPoint = new Point3D(acLine.EndPoint.X, acLine.EndPoint.Y, acLine.EndPoint.Z)
+                        };
                             dataLayer.Models.Add(line);
                         }
                         if (entity.GetType().Name == "Circle")
                         {
+                            Circle acCircle = entity as Circle;
                             CircleViewMode circle = new CircleViewMode()
                             {
-                                Id = entity.Id
+                                Id = entity.Id,
+                                CenterPoint = new Point3D(acCircle.Center.X, acCircle.Center.Y, acCircle.Center.Z),
+                                Radius = acCircle.Radius
                             };
                             dataLayer.Models.Add(circle);
                         }
                     }
                 }
-                //tr.Commit();
             }
         }
-
-        public static void RenameLayerState(string sLyrStName, string sLyrStNewName)
-        {
-            LayersViewModel layersListData = new LayersViewModel();
-            // Get the current document and database
-            Document acDoc = acApp.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-            using (DocumentLock acLckDoc = acDoc.LockDocument())
-            {
-                // Start a transaction
-                using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
-                {
-                    // Open the Layer table for read
-                    LayerTable acLyrTbl;
-                    acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
-                        OpenMode.ForRead) as LayerTable;
-                    if (acLyrTbl.Has(sLyrStName) == true)
-                    {
-                        LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
-                        acLyrTblRec.Name = sLyrStNewName;
-                        acTrans.Commit();
-                    }
-                }
-            }
-        }
-
-        /*public static Point2d[] GetPoints(this Polyline polyline) //Workpiece for changing lines
-        {
-            var editor = acApp.DocumentManager.MdiActiveDocument.Editor;
-            if (polyline == null)
-            {
-                editor.WriteMessage("An unexpected error! Attempt to call a method for a non-existent polyline.");
-                return null;
-            }
-            if (polyline.NumberOfVertices == 0)
-                return null;
-
-            var points = new List<Point2d>();
-            for (int i = 0; i < polyline.NumberOfVertices; i++)
-                points.Add(polyline.GetPoint2dAt(i));
-
-            return points.ToArray();
-        }*/
 
         public void Initialize()
         {

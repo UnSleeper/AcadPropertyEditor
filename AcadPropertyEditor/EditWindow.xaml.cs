@@ -14,12 +14,16 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.Data.Linq;
+using System.Windows.Media.Media3D;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using uiVisibility = System.Windows.Visibility;
 using acColor = Autodesk.AutoCAD.Colors.Color;
+using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.ApplicationServices;
 using acApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using Line = Autodesk.AutoCAD.DatabaseServices.Line;
 
 namespace AcadPropertyEditor
 {
@@ -28,12 +32,12 @@ namespace AcadPropertyEditor
     /// </summary>
     public partial class EditWindow : Window
     {
-        private readonly LayersViewModel LayersListData;
+        private readonly LayersViewModel _layersListData;
         public EditWindow()
         {
             InitializeComponent();
-            LayersListData = new LayersViewModel();
-            DataContext = LayersListData;
+            _layersListData = new LayersViewModel();
+            DataContext = _layersListData;
         }
 
         public class LayersViewModel : INotifyPropertyChanged
@@ -55,7 +59,6 @@ namespace AcadPropertyEditor
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
-
         }
         public class Model : INotifyPropertyChanged
         {
@@ -65,11 +68,16 @@ namespace AcadPropertyEditor
                 get => name;
                 set
                 {
-                    RenameLayer(this.name, value);
+                    Rename(this.name, value);
                     name = value;
                     OnPropertyChanged();
                 }
             }
+
+            public virtual void Rename(string name, string value)
+            {
+            }
+
             private string type;
             public string Type
             {
@@ -79,75 +87,65 @@ namespace AcadPropertyEditor
                     type = value;
                 }
             }
-            private bool isSelected;
-            public bool IsSelected
+
+            private ObjectId id;
+            public ObjectId Id
             {
-                get { return this.isSelected; }
+                get => id;
                 set
                 {
-                    if (value != this.isSelected)
-                    {
-                        this.isSelected = value;
-                        OnPropertyChanged();
-                    }
+                    id = value;
+                    OnPropertyChanged();
                 }
             }
+
+
             public event PropertyChangedEventHandler PropertyChanged;
             protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
 
-        }
-        public static void RenameLayer(string sLyrStName, string sLyrStNewName)
-        {
-            // Get the current document and database
-            Document acDoc = acApp.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-            using (DocumentLock acLckDoc = acDoc.LockDocument())
+            public uiVisibility IsLayer
             {
-                // Start a transaction
-                using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                get 
                 {
-                    LayerTable acLyrTbl;
-                    acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
-                        OpenMode.ForRead) as LayerTable;
-                    if (acLyrTbl.Has(sLyrStName) == true)
-                    {
-                        // Open the Layer for write
-                        LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
-                        acLyrTblRec.Name = sLyrStNewName;
-                        acTrans.Commit();
-                    }
+                    return type == "Layer" ? uiVisibility.Visible : uiVisibility.Collapsed;
+                }
+            }
+
+            public uiVisibility IsPoint
+            {
+                get
+                {
+                    return type == "Point" ? uiVisibility.Visible : uiVisibility.Collapsed;
+                }
+            }
+
+            public uiVisibility IsLine
+            {
+                get
+                {
+                    return type == "Line" ? uiVisibility.Visible : uiVisibility.Collapsed;
+                }
+            }
+
+            public uiVisibility IsCircle
+            {
+                get
+                {
+                    return type == "Circle" ? uiVisibility.Visible : uiVisibility.Collapsed;
                 }
             }
         }
-        public static void ChangeLayerVisible(string sLyrStName, bool isOff)
-        {
-            LayersViewModel layersListData = new LayersViewModel();
-            // Get the current document and database
-            Document acDoc = acApp.DocumentManager.MdiActiveDocument;
-            Database acCurDb = acDoc.Database;
-            using (DocumentLock acLckDoc = acDoc.LockDocument())
-            {
-                // Start a transaction
-                using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
-                {
-                    LayerTable acLyrTbl;
-                    acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
-                        OpenMode.ForRead) as LayerTable;
-                    if (acLyrTbl.Has(sLyrStName) == true)
-                    {
-                        // Open the Layer for write
-                        LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
-                        acLyrTblRec.IsOff = isOff;
-                        acTrans.Commit();
-                    }
-                }
-            }
-        }
+
         public class LayerModel : Model, INotifyPropertyChanged
         {
+            public LayerModel()
+            {
+                Type = "Layer";
+            }
+
             private acColor color;
             public acColor Color
             {
@@ -155,6 +153,7 @@ namespace AcadPropertyEditor
                 set
                 {
                     color = value;
+                    ChangeColor(Name, value);
                     OnPropertyChanged();
                 }
             }
@@ -171,73 +170,248 @@ namespace AcadPropertyEditor
                 }
             }
             public ObservableCollection<Model> Models { get; set; } = new ObservableCollection<Model>();
-            /*public ObservableCollection<PointModel> Points { get; set; } = new ObservableCollection<PointModel>();
-            public ObservableCollection<LineModel> Lines { get; set; } = new ObservableCollection<LineModel>();
-            public ObservableCollection<CircleViewMode> Circles { get; set; } = new ObservableCollection<CircleViewMode>();*/
-
+            public override void Rename(string sLyrStName, string sLyrStNewName)
+            {
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
+                {
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        LayerTable acLyrTbl;
+                        acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
+                            OpenMode.ForRead) as LayerTable;
+                        if (acLyrTbl.Has(sLyrStName) == true)
+                        {
+                            // Open the Layer for write
+                            LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
+                            acLyrTblRec.Name = sLyrStNewName;
+                            acTrans.Commit();
+                        }
+                    }
+                }
+            }
+            private static void ChangeLayerVisible(string sLyrStName, bool isOff)
+            {
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
+                {
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        LayerTable acLyrTbl;
+                        acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
+                            OpenMode.ForRead) as LayerTable;
+                        if (acLyrTbl.Has(sLyrStName) == true)
+                        {
+                            // Open the Layer for write
+                            LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
+                            acLyrTblRec.IsOff = isOff;
+                            acTrans.Commit();
+                        }
+                    }
+                }
+            }
+            private static void ChangeColor(string sLyrStName, acColor color)
+            {
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
+                {
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        LayerTable acLyrTbl;
+                        acLyrTbl = acTrans.GetObject(acCurDb.LayerTableId,
+                            OpenMode.ForRead) as LayerTable;
+                        if (acLyrTbl.Has(sLyrStName) == true)
+                        {
+                            // Open the Layer for write
+                            LayerTableRecord acLyrTblRec = acTrans.GetObject(acLyrTbl[sLyrStName], OpenMode.ForWrite) as LayerTableRecord;
+                            acLyrTblRec.Color = color;
+                            acTrans.Commit();
+                        }
+                    }
+                }
+            }
         }
         public class PointModel : Model, INotifyPropertyChanged
         {
-            private ObjectId id;
-
+            private Point3D point;
+            public Point3D Point
+            {
+                get => point;
+                set
+                {
+                    point = value;
+                    EditPoint();
+                    OnPropertyChanged();
+                }
+            }
             public PointModel()
             {
                 Name = "Точка";
                 Type = "Point";
             }
 
-            public ObjectId Id
+            private void EditPoint()
             {
-                get => id;
-                set
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
                 {
-                    id = value;
-                    OnPropertyChanged();
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        DBPoint curPoint = acTrans.GetObject(Id,
+                            OpenMode.ForWrite) as DBPoint;
+                        curPoint.Position = new Point3d(Point.X, Point.Y,Point.Z);
+                        acTrans.Commit();
+                    }
                 }
             }
         }
         public class LineModel : Model, INotifyPropertyChanged
         {
-            private ObjectId id;
-
+            private Point3D startPoint;
+            public Point3D StartPoint
+            {
+                get => startPoint;
+                set
+                {
+                    startPoint = value;
+                    EditStartPoints();
+                    OnPropertyChanged();
+                }
+            }
+            private Point3D endPoint;
+            public Point3D EndPoint
+            {
+                get => endPoint;
+                set
+                {
+                    endPoint = value;
+                    EditEndPoints();
+                    OnPropertyChanged();
+                }
+            }
             public LineModel()
             {
                 Name = "Отрезок";
                 Type = "Line";
             }
-            public ObjectId Id
+
+            private void EditStartPoints()
             {
-                get => id;
-                set
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
                 {
-                    id = value;
-                    OnPropertyChanged();
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        Line curLine = acTrans.GetObject(Id,
+                            OpenMode.ForWrite) as Line;
+                        curLine.StartPoint = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
+                        acTrans.Commit();
+                    }
+                }
+            }
+            private void EditEndPoints()
+            {
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
+                {
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        Line curLine = acTrans.GetObject(Id,
+                            OpenMode.ForWrite) as Line;
+                        curLine.EndPoint = new Point3d(endPoint.X, endPoint.Y, endPoint.Z);
+                        acTrans.Commit();
+                    }
                 }
             }
         }
         public class CircleViewMode : Model, INotifyPropertyChanged
         {
-            private ObjectId id;
+            private Point3D centerPoint;
+            public Point3D CenterPoint
+            {
+                get => centerPoint;
+                set
+                {
+                    centerPoint = value;
+                    EditCenterPoint();
+                    OnPropertyChanged();
+                }
+            }
+
+            private double radius;
+            public double Radius
+            {
+                get => radius;
+                set
+                {
+                    radius = value;
+                    EditRadius();
+                    OnPropertyChanged();
+                }
+            }
+
             public CircleViewMode()
             {
                 Name = "Окружность";
                 Type = "Circle";
             }
-            public ObjectId Id
+
+            private void EditCenterPoint()
             {
-                get => id;
-                set
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
                 {
-                    id = value;
-                    OnPropertyChanged();
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        Circle curCircle = acTrans.GetObject(Id,
+                            OpenMode.ForWrite) as Circle;
+                        curCircle.Center = new Point3d(centerPoint.X, centerPoint.Y, centerPoint.Z);
+                        acTrans.Commit();
+                    }
+                }
+            }
+            private void EditRadius()
+            {
+                // Get the current document and database
+                Document acDoc = acApp.DocumentManager.MdiActiveDocument;
+                Database acCurDb = acDoc.Database;
+                using (DocumentLock acLckDoc = acDoc.LockDocument())
+                {
+                    // Start a transaction
+                    using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+                    {
+                        Circle curCircle = acTrans.GetObject(Id,
+                            OpenMode.ForWrite) as Circle;
+                        curCircle.Radius = radius;
+                        acTrans.Commit();
+                    }
                 }
             }
         }
         private void TreeViewOnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            var editor = acApp.DocumentManager.MdiActiveDocument.Editor;
-            LayersListData.SelectedModel = e.NewValue as Model;
-            editor.WriteMessage("Selected:" + LayersListData.SelectedModel.Name + Environment.NewLine);
+            _layersListData.SelectedModel = e.NewValue as Model;
         }
     }
 }

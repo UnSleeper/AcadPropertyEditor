@@ -3,9 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:AcadPropertyEditor"
-             DataContext="EditWindow"
              mc:Ignorable="d" 
+             DataContext="LayersListData"
              d:DesignHeight="250" d:DesignWidth="400">
     
     <Grid>
@@ -17,19 +16,40 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0" DataContext="{Binding SelectedModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2">
-            <TextBlock Text="Выбранный элемент:" Margin="0,0,0,0" Height="20"  />
-            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBlock Text="Видимость:" Margin="0,0,0,0" Height="20"  />
-            <CheckBox IsChecked="{Binding Visible, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock Text="Цвет:" Margin="0,0,0,0" Height="20"  />
-            <TextBox Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}"/>
+        <StackPanel DataContext="{Binding SelectedModel, Mode=TwoWay}" Grid.Column="0" Grid.ColumnSpan="2">
+            <TextBlock Text="Выбранный элемент:" Margin="0,0,0,0" Height="20"/>
+            <TextBox Text="{Binding Name}"/>
+            <StackPanel Name ="Layer" Visibility="{Binding IsLayer}" >
+                <TextBlock Text="Свойства Слоя:" Margin="0,0,0,0" Height="20" />
+                <TextBlock Text="Видимость:" Margin="0,0,0,0" Height="20" />
+                <CheckBox IsChecked="{Binding Visible}"/>
+                <TextBlock Text="Цвет:" Margin="0,0,0,0" Height="20"  />
+                <TextBox Text="{Binding Color}"/>
+            </StackPanel>
+            <StackPanel Name ="Point" Visibility="{Binding IsPoint}" >
+                <TextBlock Text="Свойства Точки:" Margin="0,0,0,0" Height="20" />
+                <TextBlock Text="Point X,Y,Z:" Margin="0,0,0,0" Height="20" />
+                <TextBox Text="{Binding Point}"/>
+            </StackPanel>
+            <StackPanel Name ="Line" Visibility="{Binding IsLine}" >
+                <TextBlock Text="Свойства Линии:" Margin="0,0,0,0" Height="20" />
+                <TextBlock Text="Start Point X,Y,Z:" Margin="0,0,0,0" Height="20" />
+                <TextBox Text="{Binding StartPoint}"/>
+                <TextBlock Text="End Point X,Y,Z" Margin="0,0,0,0" Height="20" />
+                <TextBox Text="{Binding EndPoint}"/>
+            </StackPanel>
+            <StackPanel Name ="Circle" Visibility="{Binding IsCircle}" >
+                <TextBlock Text="Свойства Окружности:" Margin="0,0,0,0" Height="20" />
+                <TextBlock Text="Centr Point X,Y,Z:" Margin="0,0,0,0" Height="20" />
+                <TextBox Text="{Binding CenterPoint}"/>
+                <TextBlock Text="End Point X,Y,Z" Margin="0,0,0,0" Height="20" />
+                <TextBox Text="{Binding Radius}"/>
+            </StackPanel>
         </StackPanel>
-
-        <TreeView Name="trvElem"
+        <TreeView
           Grid.Row="1" 
           Grid.Column="1" 
-          ItemsSource="{Binding LayersList, UpdateSourceTrigger=PropertyChanged}"
+          ItemsSource="{Binding LayersList}"
           SelectedItemChanged="TreeViewOnSelectedItemChanged">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate  ItemsSource="{Binding Models}" >
